@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: "demo"
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/demo?createDatabaseIfNotExist=true&autoReconnect=true&useUnicode=true&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+    driver-class-name: com.mysql.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+  jpa:
+    database: mysql
+    hibernate:
+      ddl-auto: update
+    generate-ddl: false
+    show-sql: false
+    open-in-view: false
+
