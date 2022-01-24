@@ -34,14 +34,14 @@ public class OrderController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @PutMapping(path = "/{correlationId}/cancel", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping(path = "/{correlationId}/cancel", consumes = MediaType.TEXT_PLAIN_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> cancelOrderRequest(@NotNull @PathVariable String correlationId, @RequestBody String reason) {
         requestContext.setCorrelationId(correlationId);
         orderService.sendEventAsync(OrderRequest.builder().correlationId(correlationId).cancellationReason(reason).build(), OrderEventEnum.ORDER_CANCEL);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @PutMapping(path = "/{correlationId}/confirm", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping(path = "/{correlationId}/confirm", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> confirmOrder(@NotNull @PathVariable String correlationId) {
         requestContext.setCorrelationId(correlationId);
         orderService.sendEventAsync(OrderRequest.builder().correlationId(correlationId).build(), OrderEventEnum.ORDER_CONFIRM);

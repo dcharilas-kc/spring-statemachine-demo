@@ -33,12 +33,14 @@ public class OrderStateMachineInterceptor implements StateMachineInterceptor<Ord
   public void preStateChange(State<OrderStateEnum, OrderEventEnum> state, Message<OrderEventEnum> message,
                              Transition<OrderStateEnum, OrderEventEnum> transition, StateMachine<OrderStateEnum, OrderEventEnum> stateMachine,
                              StateMachine<OrderStateEnum, OrderEventEnum> stateMachine1) {
+    log.info("Attempting to enter state " + transition.getTarget());
   }
   
   @Override
   public void postStateChange(State<OrderStateEnum, OrderEventEnum> state, Message<OrderEventEnum> message,
                               Transition<OrderStateEnum, OrderEventEnum> transition,
                               StateMachine<OrderStateEnum, OrderEventEnum> stateMachine, StateMachine<OrderStateEnum, OrderEventEnum> stateMachine1) {
+    log.info("Entered state " + transition.getTarget());
   }
   
   @Override

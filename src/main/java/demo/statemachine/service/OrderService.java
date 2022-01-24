@@ -51,7 +51,7 @@ public class OrderService {
     @SneakyThrows
     public StateMachine<OrderStateEnum, OrderEventEnum> getMachine(String correlationId, boolean isInit) {
         var stateMachine = stateMachineFactory.getStateMachine(correlationId);
-        var toReturn = isInit ? stateMachine : stateMachinePersister.restore(stateMachine, correlationId);
+    var toReturn = isInit ? stateMachine : stateMachinePersister.restore(stateMachine, correlationId);
         toReturn.getStateMachineAccessor().withRegion().addStateMachineInterceptor(stateMachineInterceptor);
         return toReturn;
     }
@@ -89,45 +89,50 @@ public class OrderService {
     }
 
     public void toCreated(OrderRequest orderRequest) {
-        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.CREATED);
+        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.CREATED, true);
         basketOrderService.save(basketOrder);
+        sendEventAsync(orderRequest,OrderEventEnum.ORDER_VALIDATE);
     }
 
     public void toCanceled(OrderRequest orderRequest) {
-        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.CANCELLED);
+        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.CANCELLED, true);
         basketOrder.setTerminationReason(orderRequest.getCancellationReason());
         basketOrderService.save(basketOrder);
     }
 
     public void toRejected(OrderRequest orderRequest) {
-        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.REJECTED);
+        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.REJECTED, false);
+        basketOrder.setTerminationReason("Something wrong");
         basketOrderService.save(basketOrder);
     }
 
+    @SneakyThrows
     public void toCheckPending(OrderRequest orderRequest, StateMachine<OrderStateEnum, OrderEventEnum> stateMachine) {
-        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.UNDER_CHECK);
+        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.UNDER_CHECK, false);
         basketOrderService.save(basketOrder);
-        //TODO add condition
-        stateMachine.getExtendedState().getVariables().put(SHOULD_ACCEPT_AFTER_VALIDATION, true);
+        //TODO dummy condition to simulate order validation
+        Thread.sleep(5000);
+        boolean shouldAccept = !orderRequest.getCorrelationId().startsWith("8");
+        stateMachine.getExtendedState().getVariables().put(SHOULD_ACCEPT_AFTER_VALIDATION, shouldAccept);
     }
 
     public void toDispatched(OrderRequest orderRequest) {
-        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.DISPATCHED);
+        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.DISPATCHED, false);
         basketOrderService.save(basketOrder);
     }
 
     public void toDelivered(OrderRequest orderRequest) {
-        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.DELIVERED);
+        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.DELIVERED, true);
         basketOrderService.save(basketOrder);
     }
 
-    private BasketOrder changeOrderStatus(OrderRequest orderRequest, OrderStateEnum state) {
+    private BasketOrder changeOrderStatus(OrderRequest orderRequest, OrderStateEnum state, boolean logPayload) {
         BasketOrder basketOrder = basketOrderService.findByCorrelationIdOrThrow(orderRequest.getCorrelationId());
         basketOrder.setState(state.toString());
         basketOrder.getTransitions().add(StateTransition.builder()
                 .status(state.toString())
                 .datetime(ZonedDateTime.now())
-                .payload(conversionService.convert(orderRequest, String.class))
+                .payload(logPayload ? conversionService.convert(orderRequest, String.class) : null)
                 .build());
         log.info("Change state of order " + orderRequest.getCorrelationId() + " to " +state);
         return basketOrder;

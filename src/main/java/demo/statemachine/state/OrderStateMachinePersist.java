@@ -20,12 +20,12 @@ public class OrderStateMachinePersist implements StateMachinePersist<OrderStateE
   
   @Override
   public void write(StateMachineContext<OrderStateEnum, OrderEventEnum> stateMachineContext, String correlationId) {
-    OrderStateMachine portInStateMachine = orderStateMachineRepository.findByCorrelationId(correlationId)
+    OrderStateMachine stateMachine = orderStateMachineRepository.findByCorrelationId(correlationId)
         .orElse(OrderStateMachine.builder()
             .correlationId(correlationId)
             .build());
-    portInStateMachine.setStateMachineContext(stateMachineContext);
-    orderStateMachineRepository.save(portInStateMachine);
+    stateMachine.setStateMachineContext(stateMachineContext);
+    orderStateMachineRepository.save(stateMachine);
   }
 
   @SneakyThrows

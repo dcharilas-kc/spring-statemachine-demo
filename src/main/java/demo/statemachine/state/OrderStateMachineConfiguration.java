@@ -5,6 +5,7 @@ import demo.statemachine.constant.OrderStateEnum;
 import demo.statemachine.model.OrderRequest;
 import demo.statemachine.service.OrderService;
 import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
@@ -27,7 +28,7 @@ import static demo.statemachine.constant.Constants.ORDER_REQUEST_VARIABLE_NAME;
 import static demo.statemachine.constant.Constants.SHOULD_ACCEPT_AFTER_VALIDATION;
 
 
-@Log4j2
+@Slf4j
 @Configuration
 @EnableStateMachineFactory(name = "orderStateMachineFactory")
 public class OrderStateMachineConfiguration extends EnumStateMachineConfigurerAdapter<OrderStateEnum, OrderEventEnum> {
@@ -73,20 +74,13 @@ public class OrderStateMachineConfiguration extends EnumStateMachineConfigurerAd
     @Override
     public void configure(StateMachineTransitionConfigurer<OrderStateEnum, OrderEventEnum> transitions) throws Exception {
         transitions.withExternal()
-                .source(OrderStateEnum.INIT).target(OrderStateEnum.CREATED).event(OrderEventEnum.ORDER_SUBMIT)
-                .action(initAction()).and().withExternal()
-                .source(OrderStateEnum.CREATED).target(OrderStateEnum.CANCELLED).event(OrderEventEnum.ORDER_CANCEL)
-                .action(cancelAction()).and().withExternal()
-                .source(OrderStateEnum.CREATED).target(OrderStateEnum.UNDER_CHECK).event(OrderEventEnum.ORDER_VALIDATE)
-                .action(validateAction()).and().withExternal()
-                .source(OrderStateEnum.UNDER_CHECK).target(OrderStateEnum.CANCELLED).event(OrderEventEnum.ORDER_CANCEL)
-                .action(cancelAction()).and().withExternal()
-                .source(OrderStateEnum.UNDER_CHECK).target(OrderStateEnum.REJECTED).event(OrderEventEnum.ORDER_REJECT)
-                .action(rejectAction()).and().withExternal()
-                .source(OrderStateEnum.UNDER_CHECK).target(OrderStateEnum.DISPATCHED).event(OrderEventEnum.ORDER_ACCEPT)
-                .action(acceptAction()).and().withExternal()
-                .source(OrderStateEnum.DISPATCHED).target(OrderStateEnum.DELIVERED).event(OrderEventEnum.ORDER_CONFIRM)
-                .action(completeAction()).and().withExternal();
+                .source(OrderStateEnum.INIT).target(OrderStateEnum.CREATED).event(OrderEventEnum.ORDER_SUBMIT).action(initAction()).and().withExternal()
+                .source(OrderStateEnum.CREATED).target(OrderStateEnum.CANCELLED).event(OrderEventEnum.ORDER_CANCEL).action(cancelAction()).and().withExternal()
+                .source(OrderStateEnum.CREATED).target(OrderStateEnum.UNDER_CHECK).event(OrderEventEnum.ORDER_VALIDATE).action(validateAction()).and().withExternal()
+                .source(OrderStateEnum.UNDER_CHECK).target(OrderStateEnum.CANCELLED).event(OrderEventEnum.ORDER_CANCEL).action(cancelAction()).and().withExternal()
+                .source(OrderStateEnum.UNDER_CHECK).target(OrderStateEnum.REJECTED).event(OrderEventEnum.ORDER_REJECT).action(rejectAction()).and().withExternal()
+                .source(OrderStateEnum.UNDER_CHECK).target(OrderStateEnum.DISPATCHED).event(OrderEventEnum.ORDER_ACCEPT).action(acceptAction()).and().withExternal()
+                .source(OrderStateEnum.DISPATCHED).target(OrderStateEnum.DELIVERED).event(OrderEventEnum.ORDER_CONFIRM).action(completeAction()).and().withExternal();
     }
 
 
@@ -95,7 +89,6 @@ public class OrderStateMachineConfiguration extends EnumStateMachineConfigurerAd
             @Override
             public void eventNotAccepted(Message event) {
                 log.warn("Event not processed: {}", event);
-                log.warn(event.getPayload());
             }
         };
     }
