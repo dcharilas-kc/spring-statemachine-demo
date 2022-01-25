@@ -21,12 +21,22 @@ public class GlobalExceptionHandler {
 
   @ResponseBody
   @ResponseStatus(BAD_REQUEST)
-  @ExceptionHandler(MethodArgumentNotValidException.class)
+  @ExceptionHandler({MethodArgumentNotValidException.class})
   public ResponseEntity<String> handleMethodArgumentNotValidException(final MethodArgumentNotValidException ex, WebRequest request) {
     var debugMessage = ex.getBindingResult().getFieldErrors()
         .stream()
         .map(e -> String.format("'%s':'%s'", e.getField(), e.getDefaultMessage()))
         .collect(Collectors.joining(", "));
+    var requestDescription = request.getDescription(false);
+    log.warn("Bad Request: {} | Debug: {}", requestDescription, debugMessage);
+    return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+  }
+
+  @ResponseBody
+  @ResponseStatus(BAD_REQUEST)
+  @ExceptionHandler({CorrelationIdError.class})
+  public ResponseEntity<String> handleCorrelationIdError(final CorrelationIdError ex, WebRequest request) {
+    var debugMessage = ex.getMessage();
     var requestDescription = request.getDescription(false);
     log.warn("Bad Request: {} | Debug: {}", requestDescription, debugMessage);
     return new ResponseEntity<>(HttpStatus.BAD_REQUEST);

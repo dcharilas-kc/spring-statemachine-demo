@@ -2,6 +2,7 @@
 package demo.statemachine.service;
 
 import demo.statemachine.domain.BasketOrder;
+import demo.statemachine.exception.CorrelationIdError;
 import demo.statemachine.repository.BasketOrderRepository;
 import lombok.SneakyThrows;
 import org.springframework.stereotype.Service;
@@ -28,13 +29,18 @@ public class BasketOrderService {
     @SneakyThrows
     public BasketOrder findByCorrelationIdOrThrow(String correlationId) {
         return basketOrderRepository.findByCorrelationId(correlationId)
-                .orElseThrow(() -> new Exception("No Order was found with correlationId: " + correlationId));
+                .orElseThrow(() -> new CorrelationIdError("No Order was found with correlationId: " + correlationId));
     }
 
     @SneakyThrows
-    public void validateNotDuplicate(String correlationId) {
+    public void validateDoesNotExist(String correlationId) {
         if (basketOrderRepository.findByCorrelationId(correlationId).isPresent()) {
-            throw new Exception("Correlation Id already exists.");
+            throw new CorrelationIdError("Correlation Id already exists.");
         }
+    }
+
+    @SneakyThrows
+    public void validateExists(String correlationId) {
+        findByCorrelationIdOrThrow(correlationId);
     }
 }

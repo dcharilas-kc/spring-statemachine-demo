@@ -28,7 +28,7 @@ public class OrderController {
 
     @PostMapping(path = "/submit", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> submitOrder(@NotNull @RequestBody OrderRequest orderRequest) {
-        basketOrderService.validateNotDuplicate(orderRequest.getCorrelationId());
+        basketOrderService.validateDoesNotExist(orderRequest.getCorrelationId());
         requestContext.setCorrelationId(orderRequest.getCorrelationId());
         orderService.sendEventAsync(orderRequest,OrderEventEnum.ORDER_SUBMIT);
         return new ResponseEntity<>(HttpStatus.OK);
@@ -36,6 +36,7 @@ public class OrderController {
 
     @PutMapping(path = "/{correlationId}/cancel", consumes = MediaType.TEXT_PLAIN_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> cancelOrderRequest(@NotNull @PathVariable String correlationId, @RequestBody String reason) {
+        basketOrderService.validateExists(correlationId);
         requestContext.setCorrelationId(correlationId);
         orderService.sendEventAsync(OrderRequest.builder().correlationId(correlationId).cancellationReason(reason).build(), OrderEventEnum.ORDER_CANCEL);
         return new ResponseEntity<>(HttpStatus.OK);
@@ -43,6 +44,7 @@ public class OrderController {
 
     @PutMapping(path = "/{correlationId}/confirm", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> confirmOrder(@NotNull @PathVariable String correlationId) {
+        basketOrderService.validateExists(correlationId);
         requestContext.setCorrelationId(correlationId);
         orderService.sendEventAsync(OrderRequest.builder().correlationId(correlationId).build(), OrderEventEnum.ORDER_CONFIRM);
         return new ResponseEntity<>(HttpStatus.OK);

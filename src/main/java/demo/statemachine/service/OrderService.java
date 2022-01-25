@@ -34,17 +34,19 @@ public class OrderService {
     private final OrderStateMachineRepository orderStateMachineRepository;
     private final BasketOrderService basketOrderService;
     private final ConversionService conversionService;
+    private final ValidationService validationService;
     private final TaskExecutor taskExecutor;
 
     public OrderService(OrderStateMachineInterceptor stateMachineInterceptor, StateMachineFactory<OrderStateEnum, OrderEventEnum> stateMachineFactory,
                         StateMachinePersister<OrderStateEnum, OrderEventEnum, String> stateMachinePersister,
-                        OrderStateMachineRepository orderStateMachineRepository, BasketOrderService basketOrderService, ConversionService conversionService, TaskExecutor taskExecutor) {
+                        OrderStateMachineRepository orderStateMachineRepository, BasketOrderService basketOrderService, ConversionService conversionService, ValidationService validationService, TaskExecutor taskExecutor) {
         this.stateMachineInterceptor = stateMachineInterceptor;
         this.stateMachineFactory = stateMachineFactory;
         this.stateMachinePersister = stateMachinePersister;
         this.orderStateMachineRepository = orderStateMachineRepository;
         this.basketOrderService = basketOrderService;
         this.conversionService = conversionService;
+        this.validationService = validationService;
         this.taskExecutor = taskExecutor;
     }
 
@@ -106,14 +108,10 @@ public class OrderService {
         basketOrderService.save(basketOrder);
     }
 
-    @SneakyThrows
     public void toCheckPending(OrderRequest orderRequest, StateMachine<OrderStateEnum, OrderEventEnum> stateMachine) {
         BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.UNDER_CHECK, false);
         basketOrderService.save(basketOrder);
-        //TODO dummy condition to simulate order validation
-        Thread.sleep(5000);
-        boolean shouldAccept = !orderRequest.getCorrelationId().startsWith("8");
-        stateMachine.getExtendedState().getVariables().put(SHOULD_ACCEPT_AFTER_VALIDATION, shouldAccept);
+        stateMachine.getExtendedState().getVariables().put(SHOULD_ACCEPT_AFTER_VALIDATION, validationService.validateOrder(orderRequest));
     }
 
     public void toDispatched(OrderRequest orderRequest) {
