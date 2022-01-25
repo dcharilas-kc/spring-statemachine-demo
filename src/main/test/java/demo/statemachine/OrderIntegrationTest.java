@@ -22,9 +22,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static java.util.Objects.nonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @IntegrationTest
@@ -83,6 +83,16 @@ public class OrderIntegrationTest extends BaseIntegrationTest {
     confirmOrder(orderRequest,status().isBadRequest());
   }
 
+  @Test
+  @DisplayName("Test Cancel Order after Dispatch - FAIL")
+  void testCancelAfterDispatch() {
+    OrderRequest orderRequest = getOrderRequest();
+    submitOrder(orderRequest,status().isOk());
+    assertOrderState(orderRequest.getCorrelationId(),OrderStateEnum.DISPATCHED);
+    orderRequest.setCancellationReason("changed my mind");
+    cancelOrder(orderRequest,status().isOk());
+    assertOrderState(orderRequest.getCorrelationId(),OrderStateEnum.DISPATCHED);
+  }
 
   private void assertOrderState(String correlationId, OrderStateEnum state) {
     Optional<BasketOrder> order = basketOrderRepository.findByCorrelationId(correlationId);
@@ -94,7 +104,7 @@ public class OrderIntegrationTest extends BaseIntegrationTest {
     return OrderRequest.builder()
             .correlationId(UUID.randomUUID().toString())
             .customerId("customer-123")
-            .products(List.of(Product.builder().id("p-1").quantity(2).build()))
+            .products(List.of(Product.builder().id("p1").quantity(2).build()))
             .build();
   }
   
@@ -112,10 +122,10 @@ public class OrderIntegrationTest extends BaseIntegrationTest {
 
   @SneakyThrows
   private MvcResult cancelOrder(OrderRequest orderRequest, ResultMatcher resultMatcher) {
-    MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.put("/order/" + orderRequest.getCorrelationId() +"/cancel")
-                    .contentType(MediaType.TEXT_PLAIN_VALUE)
-                    .content(orderRequest.getCancellationReason())
-                    .accept(MediaType.APPLICATION_JSON))
+    MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.put("/order/" + orderRequest.getCorrelationId() + "/cancel")
+            .contentType(MediaType.TEXT_PLAIN_VALUE)
+            .content(nonNull(orderRequest.getCancellationReason()) ? orderRequest.getCancellationReason() : "-")
+            .accept(MediaType.APPLICATION_JSON))
             .andExpect(resultMatcher)
             .andReturn();
     MILLISECONDS.sleep(SLEEP_TIME_AFTER_REQUEST);

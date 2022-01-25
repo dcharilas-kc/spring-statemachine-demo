@@ -91,7 +91,7 @@ public class OrderService {
     }
 
     public void toCreated(OrderRequest orderRequest) {
-        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.CREATED, true);
+        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.CREATED, false);
         basketOrderService.save(basketOrder);
         sendEventAsync(orderRequest,OrderEventEnum.ORDER_VALIDATE);
     }
@@ -115,6 +115,7 @@ public class OrderService {
     }
 
     public void toDispatched(OrderRequest orderRequest) {
+        basketOrderService.validateNotInFiniteState(orderRequest.getCorrelationId());
         BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.DISPATCHED, false);
         basketOrderService.save(basketOrder);
     }

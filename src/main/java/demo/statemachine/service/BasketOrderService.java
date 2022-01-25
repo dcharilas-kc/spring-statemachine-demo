@@ -1,6 +1,7 @@
 
 package demo.statemachine.service;
 
+import demo.statemachine.constant.OrderStateEnum;
 import demo.statemachine.domain.BasketOrder;
 import demo.statemachine.exception.CorrelationIdError;
 import demo.statemachine.repository.BasketOrderRepository;
@@ -43,4 +44,13 @@ public class BasketOrderService {
     public void validateExists(String correlationId) {
         findByCorrelationIdOrThrow(correlationId);
     }
+
+    @SneakyThrows
+    public void validateNotInFiniteState(String correlationId) {
+        BasketOrder basketOrder = findByCorrelationIdOrThrow(correlationId);
+        if (OrderStateEnum.valueOf(basketOrder.getState()).isFinite()) {
+            throw new Exception("Order is in finite state.");
+        }
+    }
+
 }

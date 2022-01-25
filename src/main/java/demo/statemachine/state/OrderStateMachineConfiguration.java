@@ -4,7 +4,6 @@ import demo.statemachine.constant.OrderEventEnum;
 import demo.statemachine.constant.OrderStateEnum;
 import demo.statemachine.model.OrderRequest;
 import demo.statemachine.service.OrderService;
-import lombok.extern.log4j.Log4j2;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

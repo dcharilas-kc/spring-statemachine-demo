@@ -9,7 +9,7 @@ import java.util.List;
 @Service
 public class ValidationService {
 
-    private final static List<String> VALID_PRODUCTS = List.of("p-1");
+    private final static List<String> VALID_PRODUCTS = List.of("p1");
     private final static int MAX_ALLOWED_QUANTITY = 100;
 
     @SneakyThrows
