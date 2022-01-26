@@ -23,8 +23,8 @@ import org.springframework.statemachine.persist.StateMachinePersister;
 
 import java.util.EnumSet;
 
-import static demo.statemachine.constant.Constants.ORDER_REQUEST_VARIABLE_NAME;
-import static demo.statemachine.constant.Constants.SHOULD_ACCEPT_AFTER_VALIDATION;
+import static demo.statemachine.constant.DemoConstants.ORDER_REQUEST_VARIABLE_NAME;
+import static demo.statemachine.constant.DemoConstants.SHOULD_ACCEPT_AFTER_VALIDATION;
 
 
 @Slf4j

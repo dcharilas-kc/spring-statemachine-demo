@@ -1,6 +1,7 @@
 package demo.statemachine.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import demo.statemachine.retry.domain.CorrelationIdAware;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,7 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class OrderRequest {
+public class OrderRequest implements CorrelationIdAware {
 
     private String correlationId;
     private String customerId;

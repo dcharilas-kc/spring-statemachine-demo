@@ -6,6 +6,8 @@ import demo.statemachine.domain.BasketOrder;
 import demo.statemachine.domain.StateTransition;
 import demo.statemachine.model.OrderRequest;
 import demo.statemachine.repository.OrderStateMachineRepository;
+import demo.statemachine.retry.annotation.CancelRetryable;
+import demo.statemachine.retry.annotation.RetryableParent;
 import demo.statemachine.state.OrderStateMachineInterceptor;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
@@ -20,8 +22,8 @@ import java.time.ZonedDateTime;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static demo.statemachine.constant.Constants.ORDER_REQUEST_VARIABLE_NAME;
-import static demo.statemachine.constant.Constants.SHOULD_ACCEPT_AFTER_VALIDATION;
+import static demo.statemachine.constant.DemoConstants.ORDER_REQUEST_VARIABLE_NAME;
+import static demo.statemachine.constant.DemoConstants.SHOULD_ACCEPT_AFTER_VALIDATION;
 import static java.util.concurrent.CompletableFuture.runAsync;
 
 @Log4j2
@@ -35,11 +37,12 @@ public class OrderService {
     private final BasketOrderService basketOrderService;
     private final ConversionService conversionService;
     private final ValidationService validationService;
+    private final DispatchService dispatchService;
     private final TaskExecutor taskExecutor;
 
     public OrderService(OrderStateMachineInterceptor stateMachineInterceptor, StateMachineFactory<OrderStateEnum, OrderEventEnum> stateMachineFactory,
                         StateMachinePersister<OrderStateEnum, OrderEventEnum, String> stateMachinePersister,
-                        OrderStateMachineRepository orderStateMachineRepository, BasketOrderService basketOrderService, ConversionService conversionService, ValidationService validationService, TaskExecutor taskExecutor) {
+                        OrderStateMachineRepository orderStateMachineRepository, BasketOrderService basketOrderService, ConversionService conversionService, ValidationService validationService, DispatchService dispatchService, TaskExecutor taskExecutor) {
         this.stateMachineInterceptor = stateMachineInterceptor;
         this.stateMachineFactory = stateMachineFactory;
         this.stateMachinePersister = stateMachinePersister;
@@ -47,6 +50,7 @@ public class OrderService {
         this.basketOrderService = basketOrderService;
         this.conversionService = conversionService;
         this.validationService = validationService;
+        this.dispatchService = dispatchService;
         this.taskExecutor = taskExecutor;
     }
 
@@ -96,6 +100,7 @@ public class OrderService {
         sendEventAsync(orderRequest,OrderEventEnum.ORDER_VALIDATE);
     }
 
+    @CancelRetryable(flowNames = {"toDispatched"})
     public void toCanceled(OrderRequest orderRequest) {
         BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.CANCELLED, true);
         basketOrder.setTerminationReason(orderRequest.getCancellationReason());
@@ -114,7 +119,9 @@ public class OrderService {
         stateMachine.getExtendedState().getVariables().put(SHOULD_ACCEPT_AFTER_VALIDATION, validationService.validateOrder(orderRequest));
     }
 
+    @RetryableParent(flowName = "toDispatched")
     public void toDispatched(OrderRequest orderRequest) {
+        dispatchService.dispatchOrder(orderRequest);
         basketOrderService.validateNotInFiniteState(orderRequest.getCorrelationId());
         BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.DISPATCHED, false);
         basketOrderService.save(basketOrder);
