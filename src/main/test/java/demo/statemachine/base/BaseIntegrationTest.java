@@ -17,7 +17,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 public class BaseIntegrationTest implements ApplicationContextInitializer<ConfigurableApplicationContext> {
 
-  public static TestContainer telcoTestContainer = new TestContainer();
+  public static TestContainer testContainer = new TestContainer();
 
   @Autowired
   public MockMvc mockMvc;
@@ -28,9 +28,9 @@ public class BaseIntegrationTest implements ApplicationContextInitializer<Config
   @Override
   public void initialize(@NonNull ConfigurableApplicationContext configurableApplicationContext) {
     String[] testProperties = new String[4];
-    testProperties[0] = "spring.datasource.url=" + telcoTestContainer.getJdbcUrl() + "?useSSL=false";
-    testProperties[1] = "spring.datasource.username=" + telcoTestContainer.getUsername();
-    testProperties[2] = "spring.datasource.password=" + telcoTestContainer.getPassword();
+    testProperties[0] = "spring.datasource.url=" + testContainer.getJdbcUrl() + "?useSSL=false";
+    testProperties[1] = "spring.datasource.username=" + testContainer.getUsername();
+    testProperties[2] = "spring.datasource.password=" + testContainer.getPassword();
     testProperties[3] = "spring.jpa.hibernate.ddl-auto=update";
 
     String[] mergedProperties = ArrayUtils.addAll(testProperties, getAdditionalProperties());

@@ -24,5 +24,5 @@ public class RetryableConfiguration {
   
   @Builder.Default
   private BiFunction<ZonedDateTime, Integer, ZonedDateTime> nextExecutionDateTimeComputer
-      = (initialExecutedAt, currentRetryCycle) -> initialExecutedAt.plusMinutes(1);
+      = (initialExecutedAt, currentRetryCycle) -> ZonedDateTime.now().plusSeconds(30);
 }
