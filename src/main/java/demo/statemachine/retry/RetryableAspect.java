@@ -60,9 +60,8 @@ public class RetryableAspect implements BaseAspect {
   private void triggerOrderEvent(RetryableParentEntity retryableParent, OrderEventEnum eventEnum) {
     log.info("Triggering order event {}", eventEnum);
     StateMachine<OrderStateEnum, OrderEventEnum> stateMachine = orderService.getMachine(retryableParent.getCorrelationId(), false);
-    OrderRequest numberPortabilityRequest = objectMapper.readValue(
-            ((RetryableParentEntity) retryableParent).getSerializedArgument(), OrderRequest.class);
-    stateMachine.getExtendedState().getVariables().put(ORDER_REQUEST_VARIABLE_NAME, numberPortabilityRequest);
+    OrderRequest orderRequest = objectMapper.readValue(retryableParent.getSerializedArgument(), OrderRequest.class);
+    stateMachine.getExtendedState().getVariables().put(ORDER_REQUEST_VARIABLE_NAME, orderRequest);
     stateMachine.sendEvent(eventEnum);
   }
 

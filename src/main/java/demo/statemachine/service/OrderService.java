@@ -97,7 +97,6 @@ public class OrderService {
     public void toCreated(OrderRequest orderRequest) {
         BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.CREATED, false);
         basketOrderService.save(basketOrder);
-        sendEventAsync(orderRequest,OrderEventEnum.ORDER_VALIDATE);
     }
 
     @CancelRetryable(flowNames = {"toDispatched"})
