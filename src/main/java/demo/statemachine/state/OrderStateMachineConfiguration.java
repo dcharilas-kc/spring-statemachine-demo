@@ -55,7 +55,6 @@ public class OrderStateMachineConfiguration extends EnumStateMachineConfigurerAd
         states
                 .withStates()
                 .initial(OrderStateEnum.INIT)
-                .state(OrderStateEnum.CREATED, context -> context.getStateMachine().sendEvent(OrderEventEnum.ORDER_VALIDATE))
                 .state(OrderStateEnum.VALIDATION_PENDING, context -> {
                     if ((boolean) context.getStateMachine().getExtendedState().getVariables().getOrDefault(SHOULD_ACCEPT_AFTER_VALIDATION, false)) {
                         context.getStateMachine().sendEvent(OrderEventEnum.ORDER_ACCEPT);
@@ -86,11 +85,7 @@ public class OrderStateMachineConfiguration extends EnumStateMachineConfigurerAd
     public void configure(StateMachineTransitionConfigurer<OrderStateEnum, OrderEventEnum> transitions) throws Exception {
         transitions
                 .withExternal()
-                    .source(OrderStateEnum.INIT).target(OrderStateEnum.CREATED).event(OrderEventEnum.ORDER_SUBMIT).action(initAction()).and()
-                .withExternal()
-                    .source(OrderStateEnum.CREATED).target(OrderStateEnum.CANCELLED).event(OrderEventEnum.ORDER_CANCEL).action(cancelAction()).and()
-                .withExternal()
-                    .source(OrderStateEnum.CREATED).target(OrderStateEnum.VALIDATION_PENDING).event(OrderEventEnum.ORDER_VALIDATE).action(validateAction()).and()
+                    .source(OrderStateEnum.INIT).target(OrderStateEnum.VALIDATION_PENDING).event(OrderEventEnum.ORDER_SUBMIT).action(initAction()).and()
                 .withExternal()
                     .source(OrderStateEnum.VALIDATION_PENDING).target(OrderStateEnum.CANCELLED).event(OrderEventEnum.ORDER_CANCEL).action(cancelAction()).and()
                 .withExternal()
@@ -115,7 +110,7 @@ public class OrderStateMachineConfiguration extends EnumStateMachineConfigurerAd
     private Action<OrderStateEnum, OrderEventEnum> initAction() {
         return context -> {
             OrderRequest orderRequest = (OrderRequest) context.getExtendedState().getVariables().get(ORDER_REQUEST_VARIABLE_NAME);
-            orderService.toCreated(orderRequest);
+            orderService.toValidationPending(orderRequest, context.getStateMachine());
         };
     }
 
@@ -137,13 +132,6 @@ public class OrderStateMachineConfiguration extends EnumStateMachineConfigurerAd
         return context -> {
             OrderRequest orderRequest = (OrderRequest) context.getExtendedState().getVariables().get(ORDER_REQUEST_VARIABLE_NAME);
             orderService.toRejected(orderRequest);
-        };
-    }
-
-    private Action<OrderStateEnum, OrderEventEnum> validateAction() {
-        return context -> {
-            OrderRequest orderRequest = (OrderRequest) context.getExtendedState().getVariables().get(ORDER_REQUEST_VARIABLE_NAME);
-            orderService.toCheckPending(orderRequest, context.getStateMachine());
         };
     }
 
@@ -175,17 +163,4 @@ public class OrderStateMachineConfiguration extends EnumStateMachineConfigurerAd
         };
     }
 
-    private Action<OrderStateEnum, OrderEventEnum> startInventoryCheckAction() {
-        return context -> {
-            OrderRequest orderRequest = (OrderRequest) context.getExtendedState().getVariables().get(ORDER_REQUEST_VARIABLE_NAME);
-            orderService.toInventoryPending(orderRequest);
-        };
-    }
-
-    private Action<OrderStateEnum, OrderEventEnum> startPaymentCheckAction() {
-        return context -> {
-            OrderRequest orderRequest = (OrderRequest) context.getExtendedState().getVariables().get(ORDER_REQUEST_VARIABLE_NAME);
-            orderService.toPaymentPending(orderRequest);
-        };
-    }
 }

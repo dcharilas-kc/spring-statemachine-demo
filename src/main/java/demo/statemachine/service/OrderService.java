@@ -87,12 +87,14 @@ public class OrderService {
         stateMachine.sendEvent(orderEventEnum);
     }
 
-    public void toCreated(OrderRequest orderRequest) {
-        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.CREATED, false);
+    @RetryableParent(flowName = "toValidationPending")
+    public void toValidationPending(OrderRequest orderRequest, StateMachine<OrderStateEnum, OrderEventEnum> stateMachine) {
+        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.VALIDATION_PENDING, false);
         basketOrderService.save(basketOrder);
+        stateMachine.getExtendedState().getVariables().put(SHOULD_ACCEPT_AFTER_VALIDATION, validationService.validateOrder(orderRequest));
     }
 
-    @CancelRetryable(flowNames = {"toDispatched"})
+    @CancelRetryable(flowNames = {"toValidationPending"})
     public void toCanceled(OrderRequest orderRequest) {
         BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.CANCELLED, true);
         basketOrder.setTerminationReason(orderRequest.getCancellationReason());
@@ -105,12 +107,6 @@ public class OrderService {
         basketOrderService.save(basketOrder);
     }
 
-    public void toCheckPending(OrderRequest orderRequest, StateMachine<OrderStateEnum, OrderEventEnum> stateMachine) {
-        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.VALIDATION_PENDING, false);
-        basketOrderService.save(basketOrder);
-        stateMachine.getExtendedState().getVariables().put(SHOULD_ACCEPT_AFTER_VALIDATION, validationService.validateOrder(orderRequest));
-    }
-
     @RetryableParent(flowName = "toDispatched")
     public void toDispatched(OrderRequest orderRequest) {
         dispatchService.dispatchOrder(orderRequest);
@@ -121,16 +117,6 @@ public class OrderService {
 
     public void toAccepted(OrderRequest orderRequest) {
         BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.ACCEPTED, false);
-        basketOrderService.save(basketOrder);
-    }
-
-    public void toInventoryPending(OrderRequest orderRequest) {
-        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.INVENTORY_PENDING, false);
-        basketOrderService.save(basketOrder);
-    }
-
-    public void toPaymentPending(OrderRequest orderRequest) {
-        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.PAYMENT_PENDING, false);
         basketOrderService.save(basketOrder);
     }
 

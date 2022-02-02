@@ -53,7 +53,8 @@ public class RetryableAspect implements BaseAspect {
   
   @PostConstruct
   private void setUp() {
-    runnableMapPerFlowName.put("toDispatched", e -> triggerOrderEvent(e, OrderEventEnum.ORDER_ACCEPT));
+    runnableMapPerFlowName.put("toDispatched", e -> triggerOrderEvent(e, OrderEventEnum.ORDER_DISPATCH));
+    runnableMapPerFlowName.put("toValidationPending", e -> triggerOrderEvent(e, OrderEventEnum.ORDER_SUBMIT));
   }
 
   @SneakyThrows
@@ -65,7 +66,7 @@ public class RetryableAspect implements BaseAspect {
     stateMachine.sendEvent(eventEnum);
   }
 
-  @Scheduled(cron = "0 * * * * *")
+  @Scheduled(cron = "0/15 * * * * *")
   private void retryParents() {
     log.info("Starting automatic retrying...");
     try {

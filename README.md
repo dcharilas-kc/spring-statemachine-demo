@@ -42,8 +42,8 @@ Order dispatch always succeeds if only `p1` exists within products. If `p3` exis
 
 # Retry
 
-Retry poller runs every _1'_ and fetches retryable flows in status `PENDING` from table `retryable_parent`.  
-Retry configuration can be found in `RetryableConfiguration`. Currently, 2 retries are performed with _30''_ interval.  
+Retry poller runs every _15''_ and fetches retryable flows in status `PENDING` from table `retryable_parent`.  
+Retry configuration can be found in `RetryableConfiguration`. Currently, 2 retries are performed with _10''_ interval.  
 For the purposes of this demo, order dispatch step is configured to support retry (see annotation `@RetryableParent`). 
 
 # DB
