@@ -69,11 +69,11 @@ public class OrderStateMachineConfiguration extends EnumStateMachineConfigurerAd
 
                 .withStates()
                     .parent(OrderStateEnum.FORK)
-                    .initial(OrderStateEnum.INVENTORY_PENDING, context -> context.getStateMachine().sendEvent(OrderEventEnum.ORDER_INVENTORY_CHECK))
+                    .initial(OrderStateEnum.INVENTORY_PENDING)
                     .end(OrderStateEnum.INVENTORY_OK).and()
                 .withStates()
                     .parent(OrderStateEnum.FORK)
-                    .initial(OrderStateEnum.PAYMENT_PENDING, context -> context.getStateMachine().sendEvent(OrderEventEnum.ORDER_PAYMENT_CHECK))
+                    .initial(OrderStateEnum.PAYMENT_PENDING)
                     .end(OrderStateEnum.PAYMENT_OK)
 
                 .end(OrderStateEnum.REJECTED)
@@ -101,13 +101,15 @@ public class OrderStateMachineConfiguration extends EnumStateMachineConfigurerAd
                 .withExternal()
                     .source(OrderStateEnum.DISPATCHED).target(OrderStateEnum.DELIVERED).event(OrderEventEnum.ORDER_CONFIRM).action(completeAction()).and()
                 .withExternal()
-                    .source(OrderStateEnum.INVENTORY_PENDING).target(OrderStateEnum.INVENTORY_OK).event(OrderEventEnum.ORDER_INVENTORY_CHECK).action(validateInventoryAction()).and()
+                    .source(OrderStateEnum.INVENTORY_PENDING).target(OrderStateEnum.INVENTORY_OK).action(validateInventoryAction()).and()
                 .withExternal()
-                    .source(OrderStateEnum.PAYMENT_PENDING).target(OrderStateEnum.PAYMENT_OK).event(OrderEventEnum.ORDER_PAYMENT_CHECK).action(validatePaymentAction()).and()
+                    .source(OrderStateEnum.PAYMENT_PENDING).target(OrderStateEnum.PAYMENT_OK).action(validatePaymentAction()).and()
+                .withExternal()
+                    .source(OrderStateEnum.JOIN).target(OrderStateEnum.DISPATCH_PENDING).and()
 
                 .withFork().source(OrderStateEnum.ACCEPTED).target(OrderStateEnum.FORK).and()
                 .withJoin().source(OrderStateEnum.FORK).target(OrderStateEnum.JOIN).and();
-                //.withFork().source(OrderStateEnum.FORK).target(OrderStateEnum.INVENTORY_PENDING).target(OrderStateEnum.PAYMENT_PENDING).and()
+                //.withFork().source(OrderStateEnum.ACCEPTED).target(OrderStateEnum.INVENTORY_PENDING).target(OrderStateEnum.PAYMENT_PENDING).and()
                 //.withJoin().source(OrderStateEnum.INVENTORY_OK).source(OrderStateEnum.PAYMENT_OK).target(OrderStateEnum.JOIN);
     }
 
