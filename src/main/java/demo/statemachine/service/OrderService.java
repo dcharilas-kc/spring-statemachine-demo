@@ -5,14 +5,13 @@ import demo.statemachine.constant.OrderStateEnum;
 import demo.statemachine.domain.BasketOrder;
 import demo.statemachine.domain.StateTransition;
 import demo.statemachine.model.OrderRequest;
-import demo.statemachine.repository.OrderStateMachineRepository;
 import demo.statemachine.retry.annotation.CancelRetryable;
 import demo.statemachine.retry.annotation.RetryableParent;
 import demo.statemachine.state.OrderStateMachineInterceptor;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.core.convert.ConversionService;
-import org.springframework.core.task.TaskExecutor;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.config.StateMachineFactory;
 import org.springframework.statemachine.persist.StateMachinePersister;
@@ -24,7 +23,6 @@ import java.util.stream.Stream;
 
 import static demo.statemachine.constant.DemoConstants.ORDER_REQUEST_VARIABLE_NAME;
 import static demo.statemachine.constant.DemoConstants.SHOULD_ACCEPT_AFTER_VALIDATION;
-import static java.util.concurrent.CompletableFuture.runAsync;
 
 @Log4j2
 @Service
@@ -33,25 +31,21 @@ public class OrderService {
     private final OrderStateMachineInterceptor stateMachineInterceptor;
     private final StateMachineFactory<OrderStateEnum, OrderEventEnum> stateMachineFactory;
     private final StateMachinePersister<OrderStateEnum, OrderEventEnum, String> stateMachinePersister;
-    private final OrderStateMachineRepository orderStateMachineRepository;
     private final BasketOrderService basketOrderService;
     private final ConversionService conversionService;
     private final ValidationService validationService;
     private final DispatchService dispatchService;
-    private final TaskExecutor taskExecutor;
 
     public OrderService(OrderStateMachineInterceptor stateMachineInterceptor, StateMachineFactory<OrderStateEnum, OrderEventEnum> stateMachineFactory,
-                        StateMachinePersister<OrderStateEnum, OrderEventEnum, String> stateMachinePersister,
-                        OrderStateMachineRepository orderStateMachineRepository, BasketOrderService basketOrderService, ConversionService conversionService, ValidationService validationService, DispatchService dispatchService, TaskExecutor taskExecutor) {
+                        StateMachinePersister<OrderStateEnum, OrderEventEnum, String> stateMachinePersister, BasketOrderService basketOrderService,
+                        ConversionService conversionService, ValidationService validationService, DispatchService dispatchService) {
         this.stateMachineInterceptor = stateMachineInterceptor;
         this.stateMachineFactory = stateMachineFactory;
         this.stateMachinePersister = stateMachinePersister;
-        this.orderStateMachineRepository = orderStateMachineRepository;
         this.basketOrderService = basketOrderService;
         this.conversionService = conversionService;
         this.validationService = validationService;
         this.dispatchService = dispatchService;
-        this.taskExecutor = taskExecutor;
     }
 
     @SneakyThrows
@@ -86,12 +80,11 @@ public class OrderService {
         log.info("Initialized order " + orderRequest.getCorrelationId());
     }
 
+    @Async
     public void sendEventAsync(OrderRequest orderRequest, OrderEventEnum orderEventEnum) {
-        runAsync(() -> {
-            StateMachine<OrderStateEnum, OrderEventEnum> stateMachine = getStateMachine(orderRequest, orderEventEnum == OrderEventEnum.ORDER_SUBMIT);
-            stateMachine.getExtendedState().getVariables().put(ORDER_REQUEST_VARIABLE_NAME, orderRequest);
-            stateMachine.sendEvent(orderEventEnum);
-        }, taskExecutor);
+        StateMachine<OrderStateEnum, OrderEventEnum> stateMachine = getStateMachine(orderRequest, orderEventEnum == OrderEventEnum.ORDER_SUBMIT);
+        stateMachine.getExtendedState().getVariables().put(ORDER_REQUEST_VARIABLE_NAME, orderRequest);
+        stateMachine.sendEvent(orderEventEnum);
     }
 
     public void toCreated(OrderRequest orderRequest) {
@@ -113,7 +106,7 @@ public class OrderService {
     }
 
     public void toCheckPending(OrderRequest orderRequest, StateMachine<OrderStateEnum, OrderEventEnum> stateMachine) {
-        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.UNDER_CHECK, false);
+        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.VALIDATION_PENDING, false);
         basketOrderService.save(basketOrder);
         stateMachine.getExtendedState().getVariables().put(SHOULD_ACCEPT_AFTER_VALIDATION, validationService.validateOrder(orderRequest));
     }
@@ -126,8 +119,23 @@ public class OrderService {
         basketOrderService.save(basketOrder);
     }
 
+    public void toAccepted(OrderRequest orderRequest) {
+        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.ACCEPTED, false);
+        basketOrderService.save(basketOrder);
+    }
+
     public void toDelivered(OrderRequest orderRequest) {
         BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.DELIVERED, true);
+        basketOrderService.save(basketOrder);
+    }
+
+    public void toInventoryOk(OrderRequest orderRequest) {
+        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.INVENTORY_OK, false);
+        basketOrderService.save(basketOrder);
+    }
+
+    public void toPaymentOk(OrderRequest orderRequest) {
+        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.PAYMENT_OK, false);
         basketOrderService.save(basketOrder);
     }
 

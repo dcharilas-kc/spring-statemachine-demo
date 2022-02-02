@@ -26,6 +26,7 @@ public class OrderStateMachineInterceptor implements StateMachineInterceptor<Ord
   
   @Override
   public Message<OrderEventEnum> preEvent(Message<OrderEventEnum> message, StateMachine<OrderStateEnum, OrderEventEnum> stateMachine) {
+    log.info("=====> PRE: " + stateMachine.getState().getId() + " with event " + message.getPayload());
     return message;
   }
 
