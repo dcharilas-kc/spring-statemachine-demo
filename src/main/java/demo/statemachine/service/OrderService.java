@@ -124,6 +124,16 @@ public class OrderService {
         basketOrderService.save(basketOrder);
     }
 
+    public void toInventoryPending(OrderRequest orderRequest) {
+        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.INVENTORY_PENDING, false);
+        basketOrderService.save(basketOrder);
+    }
+
+    public void toPaymentPending(OrderRequest orderRequest) {
+        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.PAYMENT_PENDING, false);
+        basketOrderService.save(basketOrder);
+    }
+
     public void toDelivered(OrderRequest orderRequest) {
         BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.DELIVERED, true);
         basketOrderService.save(basketOrder);

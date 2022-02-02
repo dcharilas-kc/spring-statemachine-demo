@@ -31,7 +31,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ContextConfiguration(initializers = OrderIntegrationTest.class)
 public class OrderIntegrationTest extends BaseIntegrationTest {
   
-  private static final int SLEEP_TIME_AFTER_REQUEST = 200;
+  private static final int SLEEP_TIME_AFTER_SUBMIT = 10000;
+  private static final int SLEEP_TIME_AFTER_UPDATE = 2000;
 
   @Autowired
   private BasketOrderRepository basketOrderRepository;
@@ -116,7 +117,7 @@ public class OrderIntegrationTest extends BaseIntegrationTest {
         .accept(MediaType.APPLICATION_JSON))
         .andExpect(resultMatcher)
         .andReturn();
-    MILLISECONDS.sleep(SLEEP_TIME_AFTER_REQUEST);
+    MILLISECONDS.sleep(SLEEP_TIME_AFTER_SUBMIT);
     return mvcResult;
   }
 
@@ -128,7 +129,7 @@ public class OrderIntegrationTest extends BaseIntegrationTest {
             .accept(MediaType.APPLICATION_JSON))
             .andExpect(resultMatcher)
             .andReturn();
-    MILLISECONDS.sleep(SLEEP_TIME_AFTER_REQUEST);
+    MILLISECONDS.sleep(SLEEP_TIME_AFTER_UPDATE);
     return mvcResult;
   }
 
@@ -138,7 +139,7 @@ public class OrderIntegrationTest extends BaseIntegrationTest {
                     .accept(MediaType.APPLICATION_JSON))
             .andExpect(resultMatcher)
             .andReturn();
-    MILLISECONDS.sleep(SLEEP_TIME_AFTER_REQUEST);
+    MILLISECONDS.sleep(SLEEP_TIME_AFTER_UPDATE);
     return mvcResult;
   }
 }

@@ -63,16 +63,17 @@ public class OrderStateMachineConfiguration extends EnumStateMachineConfigurerAd
                         context.getStateMachine().sendEvent(OrderEventEnum.ORDER_REJECT);
                     }
                 })
+                .state(OrderStateEnum.DISPATCH_PENDING, context -> context.getStateMachine().sendEvent(OrderEventEnum.ORDER_DISPATCH))
                 .fork(OrderStateEnum.ACCEPTED)
                 .join(OrderStateEnum.JOIN)
                 .states(EnumSet.allOf(OrderStateEnum.class)).and()
 
                 .withStates()
-                    .parent(OrderStateEnum.FORK)
+                    .parent(OrderStateEnum.ACCEPTED)
                     .initial(OrderStateEnum.INVENTORY_PENDING)
                     .end(OrderStateEnum.INVENTORY_OK).and()
                 .withStates()
-                    .parent(OrderStateEnum.FORK)
+                    .parent(OrderStateEnum.ACCEPTED)
                     .initial(OrderStateEnum.PAYMENT_PENDING)
                     .end(OrderStateEnum.PAYMENT_OK)
 
@@ -107,10 +108,8 @@ public class OrderStateMachineConfiguration extends EnumStateMachineConfigurerAd
                 .withExternal()
                     .source(OrderStateEnum.JOIN).target(OrderStateEnum.DISPATCH_PENDING).and()
 
-                .withFork().source(OrderStateEnum.ACCEPTED).target(OrderStateEnum.FORK).and()
-                .withJoin().source(OrderStateEnum.FORK).target(OrderStateEnum.JOIN).and();
-                //.withFork().source(OrderStateEnum.ACCEPTED).target(OrderStateEnum.INVENTORY_PENDING).target(OrderStateEnum.PAYMENT_PENDING).and()
-                //.withJoin().source(OrderStateEnum.INVENTORY_OK).source(OrderStateEnum.PAYMENT_OK).target(OrderStateEnum.JOIN);
+                .withFork().source(OrderStateEnum.ACCEPTED).target(OrderStateEnum.INVENTORY_PENDING).target(OrderStateEnum.PAYMENT_PENDING).and()
+                .withJoin().source(OrderStateEnum.INVENTORY_OK).source(OrderStateEnum.PAYMENT_OK).target(OrderStateEnum.JOIN);
     }
 
     private Action<OrderStateEnum, OrderEventEnum> initAction() {
@@ -173,6 +172,20 @@ public class OrderStateMachineConfiguration extends EnumStateMachineConfigurerAd
         return context -> {
             OrderRequest orderRequest = (OrderRequest) context.getExtendedState().getVariables().get(ORDER_REQUEST_VARIABLE_NAME);
             orderService.toPaymentOk(orderRequest);
+        };
+    }
+
+    private Action<OrderStateEnum, OrderEventEnum> startInventoryCheckAction() {
+        return context -> {
+            OrderRequest orderRequest = (OrderRequest) context.getExtendedState().getVariables().get(ORDER_REQUEST_VARIABLE_NAME);
+            orderService.toInventoryPending(orderRequest);
+        };
+    }
+
+    private Action<OrderStateEnum, OrderEventEnum> startPaymentCheckAction() {
+        return context -> {
+            OrderRequest orderRequest = (OrderRequest) context.getExtendedState().getVariables().get(ORDER_REQUEST_VARIABLE_NAME);
+            orderService.toPaymentPending(orderRequest);
         };
     }
 }
