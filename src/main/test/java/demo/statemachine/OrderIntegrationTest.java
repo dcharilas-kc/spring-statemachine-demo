@@ -2,11 +2,15 @@ package demo.statemachine;
 
 import demo.statemachine.base.BaseIntegrationTest;
 import demo.statemachine.base.annotation.IntegrationTest;
+import demo.statemachine.constant.OrderEventEnum;
 import demo.statemachine.constant.OrderStateEnum;
 import demo.statemachine.domain.BasketOrder;
+import demo.statemachine.domain.UnprocessedEvent;
 import demo.statemachine.model.OrderRequest;
 import demo.statemachine.model.Product;
 import demo.statemachine.repository.BasketOrderRepository;
+import demo.statemachine.repository.UnprocessedEventRepository;
+import demo.statemachine.service.EventService;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,11 +35,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ContextConfiguration(initializers = OrderIntegrationTest.class)
 public class OrderIntegrationTest extends BaseIntegrationTest {
   
-  private static final int SLEEP_TIME_AFTER_SUBMIT = 10000;
+  private static final int SLEEP_TIME_AFTER_SUBMIT = 20000;
   private static final int SLEEP_TIME_AFTER_UPDATE = 2000;
 
   @Autowired
   private BasketOrderRepository basketOrderRepository;
+  @Autowired
+  private UnprocessedEventRepository unprocessedEventRepository;
   
   @SneakyThrows
   @BeforeEach
@@ -93,12 +99,19 @@ public class OrderIntegrationTest extends BaseIntegrationTest {
     orderRequest.setCancellationReason("changed my mind");
     cancelOrder(orderRequest,status().isOk());
     assertOrderState(orderRequest.getCorrelationId(),OrderStateEnum.DISPATCHED);
+    assertUnprocessedEvent(orderRequest.getCorrelationId(),OrderEventEnum.ORDER_CANCEL);
   }
 
   private void assertOrderState(String correlationId, OrderStateEnum state) {
     Optional<BasketOrder> order = basketOrderRepository.findByCorrelationId(correlationId);
     assertTrue(order.isPresent());
     assertEquals(order.get().getState(),state.name());
+  }
+
+  private void assertUnprocessedEvent(String correlationId, OrderEventEnum event) {
+    Optional<UnprocessedEvent> unprocessedEvent = unprocessedEventRepository.findByCorrelationId(correlationId);
+    assertTrue(unprocessedEvent.isPresent());
+    assertEquals(event,unprocessedEvent.get().getEvent());
   }
 
   private OrderRequest getOrderRequest() {

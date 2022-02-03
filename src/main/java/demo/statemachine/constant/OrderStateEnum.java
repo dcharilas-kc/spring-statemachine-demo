@@ -9,10 +9,20 @@ public enum OrderStateEnum {
     INIT, VALIDATION_PENDING, CANCELLED, REJECTED, ACCEPTED, DISPATCHED, DELIVERED , INVENTORY_OK, PAYMENT_OK,
 
     // internal intermediate states
-    JOIN, INVENTORY_PENDING, PAYMENT_PENDING, DISPATCH_PENDING;
+    FORK, JOIN, INVENTORY_PENDING, PAYMENT_PENDING, DISPATCH_PENDING;
 
     @JsonIgnore
     public boolean isFinite() {
         return List.of(REJECTED,CANCELLED,DELIVERED).contains(this);
+    }
+
+    @JsonIgnore
+    public boolean hasPayload() {
+        return List.of(INIT,CANCELLED,DELIVERED).contains(this);
+    }
+
+    @JsonIgnore
+    public boolean skipLog() {
+        return List.of(FORK).contains(this);
     }
 }

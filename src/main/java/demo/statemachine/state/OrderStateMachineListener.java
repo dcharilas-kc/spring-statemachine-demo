@@ -5,6 +5,7 @@ import demo.statemachine.constant.OrderStateEnum;
 import demo.statemachine.domain.BasketOrder;
 import demo.statemachine.domain.UnprocessedEvent;
 import demo.statemachine.model.OrderRequest;
+import demo.statemachine.service.BasketOrderService;
 import demo.statemachine.service.EventService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +18,7 @@ import org.springframework.statemachine.transition.Transition;
 import org.springframework.stereotype.Component;
 
 import static demo.statemachine.constant.DemoConstants.ORDER_REQUEST_VARIABLE_NAME;
+import static java.util.Objects.nonNull;
 
 @Slf4j
 @Component
@@ -24,6 +26,7 @@ import static demo.statemachine.constant.DemoConstants.ORDER_REQUEST_VARIABLE_NA
 public class OrderStateMachineListener implements StateMachineListener<OrderStateEnum, OrderEventEnum> {
 
     private final EventService eventService;
+    private final BasketOrderService basketOrderService;
 
     @Override
     public void stateChanged(State<OrderStateEnum, OrderEventEnum> state, State<OrderStateEnum, OrderEventEnum> state1) {
@@ -57,7 +60,7 @@ public class OrderStateMachineListener implements StateMachineListener<OrderStat
 
     @Override
     public void transitionEnded(Transition<OrderStateEnum, OrderEventEnum> transition) {
-
+        //use stateContext instead to get context information
     }
 
     @Override
@@ -85,6 +88,12 @@ public class OrderStateMachineListener implements StateMachineListener<OrderStat
         if (stateContext.getStage() == StateContext.Stage.EVENT_NOT_ACCEPTED) {
             log.warn("==> EVENT NOT PROCESSED: {}", stateContext.getEvent());
             eventService.saveUnprocessedEvent(stateContext);
+        } else if (stateContext.getStage() == StateContext.Stage.TRANSITION_END) {
+            log.info("Entered state " + stateContext.getTarget().getId());
+            OrderRequest orderRequest = (OrderRequest) stateContext.getExtendedState().getVariables().get(ORDER_REQUEST_VARIABLE_NAME);
+            if (nonNull(orderRequest)) {
+                basketOrderService.changeOrderStatus(orderRequest, stateContext.getTarget().getId());
+            }
         }
     }
 }

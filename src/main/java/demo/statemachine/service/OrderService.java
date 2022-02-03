@@ -2,8 +2,6 @@ package demo.statemachine.service;
 
 import demo.statemachine.constant.OrderEventEnum;
 import demo.statemachine.constant.OrderStateEnum;
-import demo.statemachine.domain.BasketOrder;
-import demo.statemachine.domain.StateTransition;
 import demo.statemachine.model.OrderRequest;
 import demo.statemachine.retry.annotation.CancelRetryable;
 import demo.statemachine.retry.annotation.RetryableParent;
@@ -16,10 +14,6 @@ import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.config.StateMachineFactory;
 import org.springframework.statemachine.persist.StateMachinePersister;
 import org.springframework.stereotype.Service;
-
-import java.time.ZonedDateTime;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static demo.statemachine.constant.DemoConstants.ORDER_REQUEST_VARIABLE_NAME;
 import static demo.statemachine.constant.DemoConstants.SHOULD_ACCEPT_AFTER_VALIDATION;
@@ -60,24 +54,9 @@ public class OrderService {
     public StateMachine<OrderStateEnum, OrderEventEnum> getStateMachine(OrderRequest orderRequest, boolean isInit) {
         var toReturn = getMachine(orderRequest.getCorrelationId(), isInit);
         if (isInit) {
-            saveInitialBasketOrder(orderRequest);
+            basketOrderService.saveInitialBasketOrder(orderRequest);
         }
         return toReturn;
-    }
-
-    private void saveInitialBasketOrder(OrderRequest orderRequest) {
-        BasketOrder basketOrder = BasketOrder.builder()
-                .customerId(orderRequest.getCustomerId())
-                .correlationId(orderRequest.getCorrelationId())
-                .state(OrderStateEnum.INIT.toString())
-                .transitions(Stream.of(StateTransition.builder()
-                        .status(OrderStateEnum.INIT.toString())
-                        .datetime(ZonedDateTime.now())
-                        .payload(conversionService.convert(orderRequest, String.class))
-                        .build()).collect(Collectors.toList()))
-                .build();
-        basketOrderService.save(basketOrder);
-        log.info("Initialized order " + orderRequest.getCorrelationId());
     }
 
     @Async
@@ -89,61 +68,37 @@ public class OrderService {
 
     @RetryableParent(flowName = "toValidationPending")
     public void toValidationPending(OrderRequest orderRequest, StateMachine<OrderStateEnum, OrderEventEnum> stateMachine) {
-        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.VALIDATION_PENDING, false);
-        basketOrderService.save(basketOrder);
         stateMachine.getExtendedState().getVariables().put(SHOULD_ACCEPT_AFTER_VALIDATION, validationService.validateOrder(orderRequest));
     }
 
     @CancelRetryable(flowNames = {"toValidationPending"})
     public void toCanceled(OrderRequest orderRequest) {
-        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.CANCELLED, true);
-        basketOrder.setTerminationReason(orderRequest.getCancellationReason());
-        basketOrderService.save(basketOrder);
+        //TODO do something awesome here
     }
 
     public void toRejected(OrderRequest orderRequest) {
-        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.REJECTED, false);
-        basketOrder.setTerminationReason("Something wrong");
-        basketOrderService.save(basketOrder);
+        //TODO do something awesome here
     }
 
     @RetryableParent(flowName = "toDispatched")
     public void toDispatched(OrderRequest orderRequest) {
         dispatchService.dispatchOrder(orderRequest);
         basketOrderService.validateNotInFiniteState(orderRequest.getCorrelationId());
-        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.DISPATCHED, false);
-        basketOrderService.save(basketOrder);
     }
 
     public void toAccepted(OrderRequest orderRequest) {
-        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.ACCEPTED, false);
-        basketOrderService.save(basketOrder);
+        //TODO do something awesome here
     }
 
     public void toDelivered(OrderRequest orderRequest) {
-        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.DELIVERED, true);
-        basketOrderService.save(basketOrder);
+        //TODO do something awesome here
     }
 
     public void toInventoryOk(OrderRequest orderRequest) {
-        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.INVENTORY_OK, false);
-        basketOrderService.save(basketOrder);
+        //TODO do something awesome here
     }
 
     public void toPaymentOk(OrderRequest orderRequest) {
-        BasketOrder basketOrder = changeOrderStatus(orderRequest,OrderStateEnum.PAYMENT_OK, false);
-        basketOrderService.save(basketOrder);
-    }
-
-    private BasketOrder changeOrderStatus(OrderRequest orderRequest, OrderStateEnum state, boolean logPayload) {
-        BasketOrder basketOrder = basketOrderService.findByCorrelationIdOrThrow(orderRequest.getCorrelationId());
-        basketOrder.setState(state.toString());
-        basketOrder.getTransitions().add(StateTransition.builder()
-                .status(state.toString())
-                .datetime(ZonedDateTime.now())
-                .payload(logPayload ? conversionService.convert(orderRequest, String.class) : null)
-                .build());
-        log.info("Change state of order " + orderRequest.getCorrelationId() + " to " +state);
-        return basketOrder;
+        //TODO do something awesome here
     }
 }

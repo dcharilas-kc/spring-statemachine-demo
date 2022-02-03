@@ -63,16 +63,16 @@ public class OrderStateMachineConfiguration extends EnumStateMachineConfigurerAd
                     }
                 })
                 .state(OrderStateEnum.DISPATCH_PENDING, context -> context.getStateMachine().sendEvent(OrderEventEnum.ORDER_DISPATCH))
-                .fork(OrderStateEnum.ACCEPTED)
+                .fork(OrderStateEnum.FORK)
                 .join(OrderStateEnum.JOIN)
                 .states(EnumSet.allOf(OrderStateEnum.class)).and()
 
                 .withStates()
-                    .parent(OrderStateEnum.ACCEPTED)
+                    .parent(OrderStateEnum.FORK)
                     .initial(OrderStateEnum.INVENTORY_PENDING)
                     .end(OrderStateEnum.INVENTORY_OK).and()
                 .withStates()
-                    .parent(OrderStateEnum.ACCEPTED)
+                    .parent(OrderStateEnum.FORK)
                     .initial(OrderStateEnum.PAYMENT_PENDING)
                     .end(OrderStateEnum.PAYMENT_OK)
 
@@ -102,8 +102,10 @@ public class OrderStateMachineConfiguration extends EnumStateMachineConfigurerAd
                     .source(OrderStateEnum.PAYMENT_PENDING).target(OrderStateEnum.PAYMENT_OK).action(validatePaymentAction()).and()
                 .withExternal()
                     .source(OrderStateEnum.JOIN).target(OrderStateEnum.DISPATCH_PENDING).and()
+                .withExternal()
+                    .source(OrderStateEnum.ACCEPTED).target(OrderStateEnum.FORK).timer(100).and()
 
-                .withFork().source(OrderStateEnum.ACCEPTED).target(OrderStateEnum.INVENTORY_PENDING).target(OrderStateEnum.PAYMENT_PENDING).and()
+                .withFork().source(OrderStateEnum.FORK).target(OrderStateEnum.INVENTORY_PENDING).target(OrderStateEnum.PAYMENT_PENDING).and()
                 .withJoin().source(OrderStateEnum.INVENTORY_OK).source(OrderStateEnum.PAYMENT_OK).target(OrderStateEnum.JOIN);
     }
 

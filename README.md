@@ -54,3 +54,12 @@ For the purposes of this demo, order dispatch step is configured to support retr
 | state_transition    | Stores all state transitions for received orders. Stores payloads of transitions triggered by API calls. |
 | order_state_machine | Each row stores the state machine (binary) for a specific order.                                         |
 | retryable_parent    | Stores all retryable flows.                                                                              |
+| unprocessed_event   | Stores all unprocessed events.                                                                           |
+
+# State machine
+
+State machine configuration exists primarily in `OrderStateMachineConfiguration`. Additional classes related to Spring state machine are:  
+`StateMachineContextConverter`: determines how state machine is serialized (used for persistence)  
+`OrderStateMachinePersist`: persists and restores state machine  
+`OrderStateMachineInterceptor`: intercepts events and state changes  
+`OrderStateMachineListener`: detects transition start/end, state change start/end, etc.  
