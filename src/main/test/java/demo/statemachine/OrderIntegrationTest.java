@@ -10,7 +10,6 @@ import demo.statemachine.model.OrderRequest;
 import demo.statemachine.model.Product;
 import demo.statemachine.repository.BasketOrderRepository;
 import demo.statemachine.repository.UnprocessedEventRepository;
-import demo.statemachine.service.EventService;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -28,7 +27,8 @@ import java.util.UUID;
 
 import static java.util.Objects.nonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @IntegrationTest

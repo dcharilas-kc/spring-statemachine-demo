@@ -8,7 +8,6 @@ import demo.statemachine.retry.annotation.RetryableParent;
 import demo.statemachine.state.OrderStateMachineInterceptor;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.core.convert.ConversionService;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.config.StateMachineFactory;
@@ -26,18 +25,16 @@ public class OrderService {
     private final StateMachineFactory<OrderStateEnum, OrderEventEnum> stateMachineFactory;
     private final StateMachinePersister<OrderStateEnum, OrderEventEnum, String> stateMachinePersister;
     private final BasketOrderService basketOrderService;
-    private final ConversionService conversionService;
     private final ValidationService validationService;
     private final DispatchService dispatchService;
 
     public OrderService(OrderStateMachineInterceptor stateMachineInterceptor, StateMachineFactory<OrderStateEnum, OrderEventEnum> stateMachineFactory,
                         StateMachinePersister<OrderStateEnum, OrderEventEnum, String> stateMachinePersister, BasketOrderService basketOrderService,
-                        ConversionService conversionService, ValidationService validationService, DispatchService dispatchService) {
+                        ValidationService validationService, DispatchService dispatchService) {
         this.stateMachineInterceptor = stateMachineInterceptor;
         this.stateMachineFactory = stateMachineFactory;
         this.stateMachinePersister = stateMachinePersister;
         this.basketOrderService = basketOrderService;
-        this.conversionService = conversionService;
         this.validationService = validationService;
         this.dispatchService = dispatchService;
     }
@@ -83,7 +80,6 @@ public class OrderService {
     @RetryableParent(flowName = "toDispatched")
     public void toDispatched(OrderRequest orderRequest) {
         dispatchService.dispatchOrder(orderRequest);
-        basketOrderService.validateNotInFiniteState(orderRequest.getCorrelationId());
     }
 
     public void toAccepted(OrderRequest orderRequest) {
