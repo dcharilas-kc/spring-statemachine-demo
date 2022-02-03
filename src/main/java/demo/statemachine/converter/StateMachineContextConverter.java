@@ -37,15 +37,11 @@ public class StateMachineContextConverter implements AttributeConverter<StateMac
     if (isNull(context)) {
       return null;
     }
-    
     ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
     Output output = new Output(byteArrayOutputStream);
-    
     KRYO_THREAD_LOCAL.get().writeObject(output, context);
-    
     output.flush();
     output.close();
-    
     return byteArrayOutputStream.toByteArray();
   }
   
@@ -54,7 +50,6 @@ public class StateMachineContextConverter implements AttributeConverter<StateMac
     if (isNull(dbData) || dbData.length == 0) {
       return null;
     }
-    
     ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(dbData);
     Input input = new Input(byteArrayInputStream);
     return KRYO_THREAD_LOCAL.get().readObject(input, StateMachineContext.class);
