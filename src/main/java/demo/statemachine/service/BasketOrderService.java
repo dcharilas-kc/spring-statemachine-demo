@@ -80,8 +80,10 @@ public class BasketOrderService {
 
     public BasketOrder changeOrderStatus(OrderRequest orderRequest, OrderStateEnum state) {
         BasketOrder basketOrder = findByCorrelationIdOrThrow(orderRequest.getCorrelationId());
-        // do not log internal states
-        if (state.skipLog()) {
+        // do not log internal states (if any).
+        // do not save transition if order is already in finite state.
+        // TODO the latter should normally not be needed, check if there is a better way to achieve this
+        if (state.skipLog() || OrderStateEnum.valueOf(basketOrder.getState()).isFinite()) {
             return basketOrder;
         }
 
